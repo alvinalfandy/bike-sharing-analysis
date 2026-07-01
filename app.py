@@ -51,7 +51,7 @@ with st.sidebar:
     
     st.markdown("---")
     st.info("Aplikasi ini dibuat untuk Analisis Data Mining.")
-    st.markdown("Made with ❤️ by Kelompok Anda")
+    st.markdown("Made with ❤️ by Kelompok 1")
 
 # Main Content
 st.title("🚲 Dashboard Analisis Bike Sharing")
