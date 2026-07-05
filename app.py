@@ -64,6 +64,9 @@ if df is None:
     st.warning("Dataset tidak ditemukan. Silakan upload file CSV.")
     st.stop()
 
+# Ensure df is a clean copy to avoid cache mutation issues
+df = df.copy()
+
 st.subheader("Statistik Dataset")
 col1, col2, col3, col4 = st.columns(4)
 with col1:
