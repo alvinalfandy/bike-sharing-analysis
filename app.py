@@ -209,20 +209,21 @@ with tab3:
     model_type = st.radio("Jenis Prediksi:", ["Regresi (Jumlah Sepeda)", "Klasifikasi (Tinggi/Rendah)"], horizontal=True)
     
     st.subheader("Input Data Prediksi")
+    st.caption("Masukkan kondisi untuk memprediksi jumlah penyewaan sepeda")
     
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        temp = st.number_input("Suhu (0-1)", min_value=0.0, max_value=1.0, value=0.5)
-        hum = st.number_input("Kelembaban (0-1)", min_value=0.0, max_value=1.0, value=0.5)
+        temp = st.slider("Suhu", min_value=0.0, max_value=1.0, value=0.5, step=0.01, help="0 = Sangat Dingin (-8 derajat C), 0.5 = Sejuk (15 derajat C), 1 = Sangat Panas (39 derajat C)")
+        hum = st.slider("Kelembaban", min_value=0.0, max_value=1.0, value=0.5, step=0.01, help="0 = Sangat Kering, 0.5 = Normal, 1 = Sangat Lembab")
     with col2:
-        windspeed = st.number_input("Kecepatan Angin (0-1)", min_value=0.0, max_value=1.0, value=0.3)
-        season = st.selectbox("Musim", [1, 2, 3, 4], index=1)
+        windspeed = st.slider("Kecepatan Angin", min_value=0.0, max_value=1.0, value=0.3, step=0.01, help="0 = Tenang, 0.5 = Sedang, 1 = Sangat Kencang")
+        season = st.selectbox("Musim", [1, 2, 3, 4], format_func=lambda x: {1: "Semi", 2: "Panas", 3: "Gugur", 4: "Dingin"}[x])
     with col3:
-        weathersit = st.selectbox("Situasi Cuaca", [1, 2, 3, 4], index=0)
-        holiday = st.selectbox("Hari Libur", [0, 1], index=0)
+        weathersit = st.selectbox("Situasi Cuaca", [1, 2, 3, 4], format_func=lambda x: {1: "Cerah", 2: "Berawan/Kabut", 3: "Hujan Ringan/Salju", 4: "Hujan Deras/Kabut Tebal"}[x])
+        holiday = st.selectbox("Hari Libur", [0, 1], format_func=lambda x: "Ya" if x == 1 else "Tidak")
     with col4:
-        workingday = st.selectbox("Hari Kerja", [0, 1], index=1)
-        yr = st.selectbox("Tahun", [0, 1], index=1)
+        workingday = st.selectbox("Hari Kerja", [0, 1], format_func=lambda x: "Ya" if x == 1 else "Tidak")
+        yr = st.selectbox("Tahun", [0, 1], format_func=lambda x: "2011" if x == 0 else "2012")
 
     st.subheader("Hasil Prediksi")
     
