@@ -82,7 +82,7 @@ with col4:
     elif len(numeric_cols) > 0:
         st.metric(f"Total {numeric_cols[0]}", f"{df[numeric_cols[0]].sum():.2f}")
 
-tab1, tab2, tab3 = st.tabs(["Explorasi Data", "Pemodelan", "Data Mentah"])
+tab1, tab2, tab3, tab4 = st.tabs(["Explorasi Data", "Pemodelan", "Prediksi", "Data Mentah"])
 
 with tab1:
     if 'dteday' in df.columns and 'cnt' in df.columns:
@@ -200,5 +200,85 @@ with tab2:
                 st.error(f"Terjadi error saat melatih model: {e}")
 
 with tab3:
+    st.subheader("Prediksi Peluang Penyewaan Sepeda")
+    
+    model_type = st.radio("Jenis Prediksi:", ["Regresi (Jumlah Sepeda)", "Klasifikasi (Tinggi/Rendah)"], horizontal=True)
+    
+    st.subheader("Input Data Prediksi")
+    
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        temp = st.number_input("Suhu (0-1)", min_value=0.0, max_value=1.0, value=0.5)
+        hum = st.number_input("Kelembaban (0-1)", min_value=0.0, max_value=1.0, value=0.5)
+    with col2:
+        windspeed = st.number_input("Kecepatan Angin (0-1)", min_value=0.0, max_value=1.0, value=0.3)
+        season = st.selectbox("Musim", [1, 2, 3, 4], index=1)
+    with col3:
+        weathersit = st.selectbox("Situasi Cuaca", [1, 2, 3, 4], index=0)
+        holiday = st.selectbox("Hari Libur", [0, 1], index=0)
+    with col4:
+        workingday = st.selectbox("Hari Kerja", [0, 1], index=1)
+        yr = st.selectbox("Tahun", [0, 1], index=1)
+
+    st.subheader("Hasil Prediksi")
+    
+    if st.button("Hitung Prediksi", use_container_width=True):
+        with st.spinner("Menghitung..."):
+            X = df[feature_cols]
+            y = df[target_col]
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
+            
+            model = None
+            if model_type == "Regresi":
+                if algo == "Linear Regression": model = LinearRegression()
+                elif algo == "Random Forest": model = RandomForestRegressor(n_estimators=100, random_state=42)
+                elif algo == "SVR": model = SVR()
+                elif algo == "KNN": model = KNeighborsRegressor()
+                elif algo == "Decision Tree": model = DecisionTreeRegressor(random_state=42)
+            else:
+                if algo == "Logistic Regression": model = LogisticRegression(max_iter=1000)
+                elif algo == "Random Forest": model = RandomForestClassifier(n_estimators=100, random_state=42)
+                elif algo == "SVM": model = SVC()
+                elif algo == "KNN": model = KNeighborsClassifier()
+                elif algo == "Decision Tree": model = DecisionTreeClassifier(random_state=42)
+            
+            model.fit(X_train, y_train)
+            
+            input_data = pd.DataFrame({
+                'temp': [temp],
+                'hum': [hum],
+                'windspeed': [windspeed],
+                'season': [season],
+                'weathersit': [weathersit],
+                'holiday': [holiday],
+                'workingday': [workingday],
+                'yr': [yr]
+            }, columns=feature_cols)
+            
+            prediction = model.predict(input_data)[0]
+            
+            col_a, col_b = st.columns(2)
+            with col_a:
+                if model_type == "Regresi":
+                    st.metric("Prediksi Jumlah Penyewaan", f"{int(round(prediction))} sepeda")
+                else:
+                    st.metric("Prediksi Kategori", "Tinggi" if prediction >= df['cnt'].mean() else "Rendah")
+            with col_b:
+                if model_type == "Regresi":
+                    if prediction < df['cnt'].quantile(0.25):
+                        status = "Sangat Rendah"
+                        color = "red"
+                    elif prediction < df['cnt'].quantile(0.50):
+                        status = "Rendah"
+                        color = "orange"
+                    elif prediction < df['cnt'].quantile(0.75):
+                        status = "Sedang"
+                        color = "blue"
+                    else:
+                        status = "Tinggi"
+                        color = "green"
+                    st.markdown(f"<h3 style='color:{color}'>Status: {status}</h3>", unsafe_allow_html=True)
+
+with tab4:
     st.subheader("Data Mentah")
     st.dataframe(df, use_container_width=True)
