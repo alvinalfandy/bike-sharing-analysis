@@ -53,7 +53,7 @@ def load_data(file):
             st.error(f"Gagal membaca file: {e}")
             return None
     else:
-        default_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bike-sharing-dataset", "day.csv")
+        default_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bike-sharing-dataset", "hour.csv")
         if os.path.exists(default_path):
             return pd.read_csv(default_path)
         return None
