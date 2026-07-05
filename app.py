@@ -213,17 +213,25 @@ with tab3:
     
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        temp = st.slider("Suhu", min_value=0.0, max_value=1.0, value=0.5, step=0.01, help="0 = Sangat Dingin (-8 derajat C), 0.5 = Sejuk (15 derajat C), 1 = Sangat Panas (39 derajat C)")
-        hum = st.slider("Kelembaban", min_value=0.0, max_value=1.0, value=0.5, step=0.01, help="0 = Sangat Kering, 0.5 = Normal, 1 = Sangat Lembab")
+        temp = st.slider("Suhu", min_value=0.0, max_value=1.0, value=0.5, step=0.01)
+        st.caption("Ternormalisasi: 0 = -8 derajat C, 1 = 39 derajat C")
+        hum = st.slider("Kelembaban", min_value=0.0, max_value=1.0, value=0.5, step=0.01)
+        st.caption("Ternormalisasi: 0 = Kering, 1 = Lembab")
     with col2:
-        windspeed = st.slider("Kecepatan Angin", min_value=0.0, max_value=1.0, value=0.3, step=0.01, help="0 = Tenang, 0.5 = Sedang, 1 = Sangat Kencang")
-        season = st.selectbox("Musim", [1, 2, 3, 4], format_func=lambda x: {1: "Semi", 2: "Panas", 3: "Gugur", 4: "Dingin"}[x])
+        windspeed = st.slider("Kecepatan Angin", min_value=0.0, max_value=1.0, value=0.3, step=0.01)
+        st.caption("Ternormalisasi: 0 = Tenang, 1 = Kencang")
+        season = st.selectbox("Musim", [1, 2, 3, 4])
+        st.caption("1 = Semi, 2 = Panas, 3 = Gugur, 4 = Dingin")
     with col3:
-        weathersit = st.selectbox("Situasi Cuaca", [1, 2, 3, 4], format_func=lambda x: {1: "Cerah", 2: "Berawan/Kabut", 3: "Hujan Ringan/Salju", 4: "Hujan Deras/Kabut Tebal"}[x])
-        holiday = st.selectbox("Hari Libur", [0, 1], format_func=lambda x: "Ya" if x == 1 else "Tidak")
+        weathersit = st.selectbox("Situasi Cuaca", [1, 2, 3, 4])
+        st.caption("1 = Cerah, 2 = Berawan, 3 = Hujan Ringan, 4 = Hujan Deras")
+        holiday = st.selectbox("Hari Libur", [0, 1])
+        st.caption("0 = Bukan, 1 = Ya")
     with col4:
-        workingday = st.selectbox("Hari Kerja", [0, 1], format_func=lambda x: "Ya" if x == 1 else "Tidak")
-        yr = st.selectbox("Tahun", [0, 1], format_func=lambda x: "2011" if x == 0 else "2012")
+        workingday = st.selectbox("Hari Kerja", [0, 1])
+        st.caption("0 = Bukan, 1 = Ya")
+        yr = st.selectbox("Tahun", [0, 1])
+        st.caption("0 = 2011, 1 = 2012")
 
     st.subheader("Hasil Prediksi")
     
