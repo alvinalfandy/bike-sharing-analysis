@@ -117,9 +117,11 @@ with tab2:
 
     analysis_type = st.radio("Tipe Analisis:", ["Klasifikasi", "Regresi"], horizontal=True)
 
-    all_cols = df.columns.tolist()
-    target_col = st.selectbox("Pilih Target", all_cols)
-    feature_cols = st.multiselect("Pilih Fitur", [c for c in all_cols if c != target_col], default=[c for c in ['temp', 'hum', 'windspeed', 'season'] if c != target_col])
+    numeric_cols_model = df.select_dtypes(include=['float64', 'int64']).columns.tolist()
+    all_cols = numeric_cols_model
+    target_col = st.selectbox("Pilih Target", all_cols, index=all_cols.index('cnt') if 'cnt' in all_cols else 0)
+    default_features = [c for c in ['temp', 'hum', 'windspeed', 'season'] if c in all_cols and c != target_col]
+    feature_cols = st.multiselect("Pilih Fitur", [c for c in all_cols if c != target_col], default=default_features)
 
     if not feature_cols:
         st.warning("Pilih minimal 1 fitur.")
