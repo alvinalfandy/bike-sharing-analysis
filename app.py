@@ -31,17 +31,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-with st.sidebar:
-    st.title("Analisis Bike Sharing")
-    st.markdown("---")
-    st.subheader("Dataset")
-    st.write("Bike Sharing Dataset (hour.csv)")
-    st.write(f"Total baris: {df.shape[0]:,}")
-    st.write(f"Total kolom: {df.shape[1]}")
-    st.markdown("---")
-    st.markdown("**Kelompok 1**")
-    st.caption("Praktikum Data Mining 2026")
-
 st.title("Dashboard Analisis Bike Sharing")
 
 @st.cache_data
@@ -56,6 +45,17 @@ df = load_data()
 if df is None:
     st.warning("Dataset tidak ditemukan.")
     st.stop()
+
+with st.sidebar:
+    st.title("Analisis Bike Sharing")
+    st.markdown("---")
+    st.subheader("Dataset")
+    st.write("Bike Sharing Dataset (hour.csv)")
+    st.write(f"Total baris: {df.shape[0]:,}")
+    st.write(f"Total kolom: {df.shape[1]}")
+    st.markdown("---")
+    st.markdown("**Kelompok 1**")
+    st.caption("Praktikum Data Mining 2026")
 
 # Ensure df is a clean copy to avoid cache mutation issues
 df = df.copy()
