@@ -34,28 +34,39 @@ st.markdown("""
 st.title("Dashboard Analisis Bike Sharing")
 
 @st.cache_data
-def load_data():
-    default_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bike-sharing-dataset", "hour.csv")
-    if os.path.exists(default_path):
-        return pd.read_csv(default_path)
-    return None
+def load_data(uploaded_file):
+    if uploaded_file is not None:
+        try:
+            return pd.read_csv(uploaded_file)
+        except Exception as e:
+            st.error(f"Gagal membaca file: {e}")
+            return None
+    else:
+        default_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bike-sharing-dataset", "hour.csv")
+        if os.path.exists(default_path):
+            return pd.read_csv(default_path)
+        return None
 
-df = load_data()
+with st.sidebar:
+    st.title("Analisis Bike Sharing")
+    st.markdown("---")
+    st.subheader("Upload Dataset")
+    uploaded_file = st.file_uploader("Upload file CSV (.csv)", type=["csv"])
+    if uploaded_file is not None:
+        st.success(f"File dimuat: {uploaded_file.name}")
+    else:
+        st.caption("Menggunakan dataset default: hour.csv")
+    st.markdown("---")
+    st.markdown("**Kelompok 1**")
+    st.caption("Praktikum Data Mining 2026")
+
+df = load_data(uploaded_file)
 
 if df is None:
     st.warning("Dataset tidak ditemukan.")
     st.stop()
 
-with st.sidebar:
-    st.title("Analisis Bike Sharing")
-    st.markdown("---")
-    st.subheader("Dataset")
-    st.write("Bike Sharing Dataset (hour.csv)")
-    st.write(f"Total baris: {df.shape[0]:,}")
-    st.write(f"Total kolom: {df.shape[1]}")
-    st.markdown("---")
-    st.markdown("**Kelompok 1**")
-    st.caption("Praktikum Data Mining 2026")
+st.write(f"Dataset: {df.shape[0]:,} baris, {df.shape[1]} kolom")
 
 # Ensure df is a clean copy to avoid cache mutation issues
 df = df.copy()
