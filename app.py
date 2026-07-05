@@ -213,12 +213,12 @@ with tab3:
     
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        temp = st.slider("Suhu", min_value=0.0, max_value=1.0, value=0.5, step=0.01)
+        temp = st.number_input("Suhu", min_value=0.0, max_value=1.0, value=0.5, step=0.1)
         st.caption("Ternormalisasi: 0 = -8 derajat C, 1 = 39 derajat C")
-        hum = st.slider("Kelembaban", min_value=0.0, max_value=1.0, value=0.5, step=0.01)
+        hum = st.number_input("Kelembaban", min_value=0.0, max_value=1.0, value=0.5, step=0.1)
         st.caption("Ternormalisasi: 0 = Kering, 1 = Lembab")
     with col2:
-        windspeed = st.slider("Kecepatan Angin", min_value=0.0, max_value=1.0, value=0.3, step=0.01)
+        windspeed = st.number_input("Kecepatan Angin", min_value=0.0, max_value=1.0, value=0.3, step=0.1)
         st.caption("Ternormalisasi: 0 = Tenang, 1 = Kencang")
         season = st.selectbox("Musim", [1, 2, 3, 4])
         st.caption("1 = Semi, 2 = Panas, 3 = Gugur, 4 = Dingin")
