@@ -1,32 +1,42 @@
-# Bike Sharing Dataset Analysis
+# Analisis Bike Sharing Dataset
 
-Aplikasi Streamlit untuk analisis dataset Bike Sharing.
+Aplikasi web interaktif untuk analisis dan prediksi penyewaan sepeda berbasis dataset Bike Sharing dari UCI Machine Learning Repository.
 
-## Deskripsi
-Project akhir praktikum Data Mining 2026. Aplikasi ini memungkinkan pengguna untuk:
-- Mengupload dataset (.csv)
-- Melakukan analisis eksplorasi data (EDA)
-- Visualisasi korelasi fitur
-- Membangun model Regresi Linier untuk prediksi jumlah penyewaan sepeda (`cnt`)
+## Tentang Project
 
-## Instalasi
-1. Clone repositori ini
-2. Install dependensi:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Jalankan aplikasi:
-   ```bash
-   streamlit run app.py
-   ```
+Project akhir Praktikum Data Mining 2026. Aplikasi ini dibangun menggunakan Python dan Streamlit untuk menganalisis pola penyewaan sepeda dan memprediksi jumlah penyewaan berdasarkan faktor cuaca, musim, dan hari.
 
 ## Dataset
-Dataset yang digunakan adalah [Bike Sharing Dataset](https://archive.ics.uci.edu/ml/datasets/Bike+Sharing+Dataset) dari UCI Machine Learning Repository.
 
-## Fitur
+Dataset: [Bike Sharing Dataset](https://archive.ics.uci.edu/dataset/275/bike+sharing+dataset) - UCI Machine Learning Repository
+
+- File: `hour.csv`
+- Jumlah baris: 17.379
+- Jumlah kolom: 17
+
+## Fitur Aplikasi
+
 - Upload dataset custom (.csv)
-- Preview dataset
-- Visualisasi heatmap korelasi
-- Training model Regresi Linier
-- Evaluasi model (MAE, MSE, RMSE, R2 Score)
-- Visualisasi Prediksi vs Aktual
+- Explorasi Data: tren penyewaan, korelasi, distribusi
+- Pemodelan: Linear Regression, Random Forest, SVM, KNN, Decision Tree
+- Prediksi interaktif berdasarkan input cuaca, suhu, musim, dll
+- Evaluasi model: R2, RMSE, MAE, Accuracy, F1 Score
+
+## Cara Menjalankan
+
+```bash
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+## Tim - Kelompok 1
+
+| Nama | GitHub |
+|------|--------|
+| Alvin Alfandy | [alvinalfandy](https://github.com/alvinalfandy) |
+| Eufroshine | [eufroshine](https://github.com/eufroshine) |
+| Ridho Fauzi | [ridhoofauzii](https://github.com/ridhoofauzii) |
+
+## Link Deploy
+
+[https://bike-sharing-analysis-aby.streamlit.app](https://bike-sharing-analysis-aby.streamlit.app)
