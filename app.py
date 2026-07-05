@@ -142,17 +142,6 @@ with tab2:
         st.warning("Pilih minimal 1 fitur.")
         st.stop()
 
-    # Debug: Show data info
-    st.write(f"Total baris dataset: {len(df)}")
-    st.write(f"Total baris fitur: {df[feature_cols].shape[0]}")
-    st.write(f"Total baris target: {df[target_col].shape[0]}")
-    
-    X = df[feature_cols]
-    y = df[target_col]
-    
-    st.write(f"Shape X: {X.shape}")
-    st.write(f"Shape y: {y.shape}")
-
     if analysis_type == "Regresi":
         algo = st.selectbox("Algoritma", ["Linear Regression", "Random Forest", "SVR", "KNN", "Decision Tree"])
     else:
@@ -249,31 +238,24 @@ with tab3:
                 st.error(f"Fitur {missing_features} tidak ditemukan di dataset.")
                 st.stop()
             
-            X = df[feature_cols_pred]
-            y = df[target_col_pred]
-            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+            X_pred = df[feature_cols_pred]
+            y_pred_target = df[target_col_pred]
+            
+            if model_type == "Klasifikasi (Tinggi/Rendah)":
+                median_cnt = y_pred_target.median()
+                y_pred_target = (y_pred_target >= median_cnt).astype(int)
+            
+            X_train_pred, X_test_pred, y_train_pred, y_test_pred = train_test_split(X_pred, y_pred_target, test_size=0.2, random_state=42)
             
             model = None
             
             try:
-                if model_type == "Regresi":
-                    # Try Random Forest first, fallback to Linear Regression
-                    try:
-                        model = RandomForestRegressor(n_estimators=100, random_state=42)
-                        model.fit(X_train, y_train)
-                    except:
-                        model = LinearRegression()
-                        model.fit(X_train, y_train)
+                if model_type == "Regresi (Jumlah Sepeda)":
+                    model = RandomForestRegressor(n_estimators=100, random_state=42)
+                    model.fit(X_train_pred, y_train_pred)
                 else:
-                    # Klasifikasi: biner berdasarkan rata-rata
-                    median_cnt = df['cnt'].median()
-                    y_class = (y >= median_cnt).astype(int)
-                    try:
-                        model = RandomForestClassifier(n_estimators=100, random_state=42)
-                        model.fit(X_train, y_class)
-                    except:
-                        model = LogisticRegression()
-                        model.fit(X_train, y_class)
+                    model = RandomForestClassifier(n_estimators=100, random_state=42)
+                    model.fit(X_train_pred, y_train_pred)
                 
                 input_data = pd.DataFrame({
                     'temp': [temp],
@@ -282,23 +264,23 @@ with tab3:
                     'season': [season]
                 })
                 
-                prediction = model.predict(input_data)[0]
+                pred_result = model.predict(input_data)[0]
                 
                 col_a, col_b = st.columns(2)
                 with col_a:
-                    if model_type == "Regresi":
-                        st.metric("Prediksi Jumlah Penyewaan", f"{int(round(prediction))} sepeda")
+                    if model_type == "Regresi (Jumlah Sepeda)":
+                        st.metric("Prediksi Jumlah Penyewaan", f"{int(round(pred_result))} sepeda")
                     else:
-                        st.metric("Prediksi Kategori", "Tinggi" if prediction >= 1 else "Rendah")
+                        st.metric("Prediksi Kategori", "Tinggi" if pred_result >= 1 else "Rendah")
                 with col_b:
-                    if model_type == "Regresi":
-                        if prediction < df['cnt'].quantile(0.25):
+                    if model_type == "Regresi (Jumlah Sepeda)":
+                        if pred_result < df['cnt'].quantile(0.25):
                             status = "Sangat Rendah"
                             color = "red"
-                        elif prediction < df['cnt'].quantile(0.50):
+                        elif pred_result < df['cnt'].quantile(0.50):
                             status = "Rendah"
                             color = "orange"
-                        elif prediction < df['cnt'].quantile(0.75):
+                        elif pred_result < df['cnt'].quantile(0.75):
                             status = "Sedang"
                             color = "blue"
                         else:
