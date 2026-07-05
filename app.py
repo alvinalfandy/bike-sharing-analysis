@@ -139,6 +139,17 @@ with tab2:
         st.warning("Pilih minimal 1 fitur.")
         st.stop()
 
+    # Debug: Show data info
+    st.write(f"Total baris dataset: {len(df)}")
+    st.write(f"Total baris fitur: {df[feature_cols].shape[0]}")
+    st.write(f"Total baris target: {df[target_col].shape[0]}")
+    
+    X = df[feature_cols]
+    y = df[target_col]
+    
+    st.write(f"Shape X: {X.shape}")
+    st.write(f"Shape y: {y.shape}")
+
     if analysis_type == "Regresi":
         algo = st.selectbox("Algoritma", ["Linear Regression", "Random Forest", "SVR", "KNN", "Decision Tree"])
     else:
