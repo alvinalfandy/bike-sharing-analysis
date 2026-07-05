@@ -224,60 +224,74 @@ with tab3:
     
     if st.button("Hitung Prediksi", use_container_width=True):
         with st.spinner("Menghitung..."):
-            X = df[feature_cols]
-            y = df[target_col]
-            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
+            # Default features for prediction
+            feature_cols_pred = ['temp', 'hum', 'windspeed', 'season']
+            target_col_pred = 'cnt'
+            
+            # Check if features exist in dataset
+            missing_features = [f for f in feature_cols_pred if f not in df.columns]
+            if missing_features:
+                st.error(f"Fitur {missing_features} tidak ditemukan di dataset.")
+                st.stop()
+            
+            X = df[feature_cols_pred]
+            y = df[target_col_pred]
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
             
             model = None
-            if model_type == "Regresi":
-                if algo == "Linear Regression": model = LinearRegression()
-                elif algo == "Random Forest": model = RandomForestRegressor(n_estimators=100, random_state=42)
-                elif algo == "SVR": model = SVR()
-                elif algo == "KNN": model = KNeighborsRegressor()
-                elif algo == "Decision Tree": model = DecisionTreeRegressor(random_state=42)
-            else:
-                if algo == "Logistic Regression": model = LogisticRegression(max_iter=1000)
-                elif algo == "Random Forest": model = RandomForestClassifier(n_estimators=100, random_state=42)
-                elif algo == "SVM": model = SVC()
-                elif algo == "KNN": model = KNeighborsClassifier()
-                elif algo == "Decision Tree": model = DecisionTreeClassifier(random_state=42)
             
-            model.fit(X_train, y_train)
-            
-            input_data = pd.DataFrame({
-                'temp': [temp],
-                'hum': [hum],
-                'windspeed': [windspeed],
-                'season': [season],
-                'weathersit': [weathersit],
-                'holiday': [holiday],
-                'workingday': [workingday],
-                'yr': [yr]
-            }, columns=feature_cols)
-            
-            prediction = model.predict(input_data)[0]
-            
-            col_a, col_b = st.columns(2)
-            with col_a:
+            try:
                 if model_type == "Regresi":
-                    st.metric("Prediksi Jumlah Penyewaan", f"{int(round(prediction))} sepeda")
+                    # Try Random Forest first, fallback to Linear Regression
+                    try:
+                        model = RandomForestRegressor(n_estimators=100, random_state=42)
+                        model.fit(X_train, y_train)
+                    except:
+                        model = LinearRegression()
+                        model.fit(X_train, y_train)
                 else:
-                    st.metric("Prediksi Kategori", "Tinggi" if prediction >= df['cnt'].mean() else "Rendah")
-            with col_b:
-                if model_type == "Regresi":
-                    if prediction < df['cnt'].quantile(0.25):
-                        status = "Sangat Rendah"
-                        color = "red"
-                    elif prediction < df['cnt'].quantile(0.50):
-                        status = "Rendah"
-                        color = "orange"
-                    elif prediction < df['cnt'].quantile(0.75):
-                        status = "Sedang"
-                        color = "blue"
+                    # Klasifikasi: biner berdasarkan rata-rata
+                    median_cnt = df['cnt'].median()
+                    y_class = (y >= median_cnt).astype(int)
+                    try:
+                        model = RandomForestClassifier(n_estimators=100, random_state=42)
+                        model.fit(X_train, y_class)
+                    except:
+                        model = LogisticRegression()
+                        model.fit(X_train, y_class)
+                
+                input_data = pd.DataFrame({
+                    'temp': [temp],
+                    'hum': [hum],
+                    'windspeed': [windspeed],
+                    'season': [season]
+                })
+                
+                prediction = model.predict(input_data)[0]
+                
+                col_a, col_b = st.columns(2)
+                with col_a:
+                    if model_type == "Regresi":
+                        st.metric("Prediksi Jumlah Penyewaan", f"{int(round(prediction))} sepeda")
                     else:
-                        status = "Tinggi"
-                        color = "green"
-                    st.markdown(f"<h3 style='color:{color}'>Status: {status}</h3>", unsafe_allow_html=True)
+                        st.metric("Prediksi Kategori", "Tinggi" if prediction >= 1 else "Rendah")
+                with col_b:
+                    if model_type == "Regresi":
+                        if prediction < df['cnt'].quantile(0.25):
+                            status = "Sangat Rendah"
+                            color = "red"
+                        elif prediction < df['cnt'].quantile(0.50):
+                            status = "Rendah"
+                            color = "orange"
+                        elif prediction < df['cnt'].quantile(0.75):
+                            status = "Sedang"
+                            color = "blue"
+                        else:
+                            status = "Tinggi"
+                            color = "green"
+                        st.markdown(f"<h3 style='color:{color}'>Status: {status}</h3>", unsafe_allow_html=True)
+            except Exception as e:
+                st.error(f"Error: {e}")
 
 with tab4:
     st.subheader("Data Mentah")
