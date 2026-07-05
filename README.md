@@ -34,7 +34,7 @@ streamlit run app.py
 | Nama | GitHub |
 |------|--------|
 | Alvin Alfandy | [alvinalfandy](https://github.com/alvinalfandy) |
-| Eufroshine | [eufroshine](https://github.com/eufroshine) |
+| Abidzar Sabil Handoyo | [eufroshine](https://github.com/eufroshine) |
 | Ridho Fauzi | [ridhoofauzii](https://github.com/ridhoofauzii) |
 
 ## Link Deploy
