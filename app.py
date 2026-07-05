@@ -10,57 +10,48 @@ from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.svm import SVC, SVR
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, classification_report
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
 import plotly.express as px
 import plotly.graph_objects as go
 
-# Page Config
 st.set_page_config(
-    page_title="Pro Analisis Bike Sharing",
-    page_icon="🚲",
+    page_title="Analisis Bike Sharing",
+    page_icon="chart_with_upwards_trend",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for Professional Look
 st.markdown("""
 <style>
-    .main { background-color: #f5f5f5; }
-    .stButton>button { background-color: #4CAF50; color: white; border-radius: 5px; }
-    .stTextInput>div>div>input { border-radius: 5px; }
-    .metric-card { 
-        background-color: white; 
-        padding: 20px; 
-        border-radius: 10px; 
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        text-align: center;
-    }
+    .main { background-color: #fafafa; }
+    .stButton>button { background-color: #2c3e50; color: white; border-radius: 5px; border: none; }
+    .stButton>button:hover { background-color: #34495e; }
     h1, h2, h3 { color: #2c3e50; }
+    .block-container { padding-top: 2rem; }
 </style>
 """, unsafe_allow_html=True)
 
-# Sidebar Configuration
 with st.sidebar:
-    st.title("🚲 Bike Sharing Analytics")
+    st.title("Analisis Bike Sharing")
     st.markdown("---")
-    
-    # File Upload
-    st.subheader("📁 Data Input")
-    st.caption("Dataset default sudah dimuat. Upload file baru jika ingin mengganti.")
-    uploaded_file = st.file_uploader("Upload Custom Dataset (.csv)", type=["csv"])
-    
+    st.subheader("Upload Dataset")
+    st.caption("Dataset default sudah dimuat otomatis.")
+    uploaded_file = st.file_uploader("Upload file CSV (.csv)", type=["csv"])
     st.markdown("---")
-    st.info("Aplikasi ini dibuat untuk Analisis Data Mining.")
-    st.markdown("Made with ❤️ by Kelompok 1")
+    st.markdown("**Kelompok 1**")
+    st.caption("Praktikum Data Mining 2026")
 
-# Main Content
-st.title("🚲 Dashboard Analisis Bike Sharing")
+st.title("Dashboard Analisis Bike Sharing")
 
-# Load Data
 @st.cache_data
 def load_data(file):
     if file is not None:
-        return pd.read_csv(file)
+        try:
+            df = pd.read_csv(file)
+            return df
+        except Exception as e:
+            st.error(f"Gagal membaca file: {e}")
+            return None
     else:
         default_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bike-sharing-dataset", "day.csv")
         if os.path.exists(default_path):
@@ -70,124 +61,131 @@ def load_data(file):
 df = load_data(uploaded_file)
 
 if df is None:
-    st.error("⚠️ Dataset tidak ditemukan. Silakan upload file CSV.")
+    st.warning("Dataset tidak ditemukan. Silakan upload file CSV.")
     st.stop()
 
-# Metrics Row
-st.subheader("📊 Statistik Dataset")
+st.subheader("Statistik Dataset")
 col1, col2, col3, col4 = st.columns(4)
 with col1:
     st.metric("Total Baris", f"{df.shape[0]:,}")
 with col2:
     st.metric("Total Kolom", f"{df.shape[1]}")
 with col3:
+    numeric_cols = df.select_dtypes(include=['float64', 'int64']).columns
     if 'cnt' in df.columns:
         st.metric("Rata-rata Penyewaan", f"{int(df['cnt'].mean()):,}")
+    elif len(numeric_cols) > 0:
+        st.metric(f"Rata-rata {numeric_cols[0]}", f"{df[numeric_cols[0]].mean():.2f}")
 with col4:
     if 'cnt' in df.columns:
         st.metric("Total Penyewaan", f"{int(df['cnt'].sum()):,}")
+    elif len(numeric_cols) > 0:
+        st.metric(f"Total {numeric_cols[0]}", f"{df[numeric_cols[0]].sum():.2f}")
 
-# Tabs for Analysis
-tab1, tab2, tab3 = st.tabs(["📈 Explorasi Data", "🔬 Pemodelan", "📥 Data Mentah"])
+tab1, tab2, tab3 = st.tabs(["Explorasi Data", "Pemodelan", "Data Mentah"])
 
 with tab1:
-    # Time Series Plot
     if 'dteday' in df.columns and 'cnt' in df.columns:
-        st.subheader("Tren Penyewaan Sepeda")
+        st.subheader("Tren Penyewaan Sepeda Harian")
         df['dteday'] = pd.to_datetime(df['dteday'])
-        fig_ts = px.line(df, x='dteday', y='cnt', title='Jumlah Penyewaan Harian', template='plotly_white')
+        fig_ts = px.line(df, x='dteday', y='cnt', labels={'dteday': 'Tanggal', 'cnt': 'Jumlah Penyewaan'}, template='plotly_white')
+        fig_ts.update_layout(showlegend=False)
         st.plotly_chart(fig_ts, use_container_width=True)
 
-    # Correlation & Distribution
     col_left, col_right = st.columns(2)
     with col_left:
-        st.subheader("Korelasi Fitur")
-        numeric_cols = df.select_dtypes(include=['float64', 'int64']).columns
-        corr = df[numeric_cols].corr()
-        fig_corr, ax = plt.subplots(figsize=(10, 8))
-        sns.heatmap(corr, annot=True, fmt=".2f", cmap='coolwarm', ax=ax)
-        st.pyplot(fig_corr)
-    
+        st.subheader("Matriks Korelasi")
+        if len(numeric_cols) > 1:
+            corr = df[numeric_cols].corr()
+            fig_corr, ax = plt.subplots(figsize=(10, 8))
+            sns.heatmap(corr, annot=True, fmt=".2f", cmap='coolwarm', ax=ax, square=True)
+            st.pyplot(fig_corr)
+        else:
+            st.info("Tidak cukup kolom numerik untuk menampilkan korelasi.")
+
     with col_right:
         st.subheader("Distribusi Fitur")
-        feature_to_plot = st.selectbox("Pilih Fitur", numeric_cols, index=list(numeric_cols).index('cnt') if 'cnt' in numeric_cols else 0)
-        fig_dist = px.histogram(df, x=feature_to_plot, nbins=30, title=f'Distribusi {feature_to_plot}', template='plotly_white')
-        st.plotly_chart(fig_dist, use_container_width=True)
+        if len(numeric_cols) > 0:
+            default_idx = list(numeric_cols).index('cnt') if 'cnt' in numeric_cols else 0
+            feature_to_plot = st.selectbox("Pilih Fitur", numeric_cols, index=default_idx)
+            fig_dist = px.histogram(df, x=feature_to_plot, nbins=30, template='plotly_white')
+            fig_dist.update_layout(showlegend=False)
+            st.plotly_chart(fig_dist, use_container_width=True)
 
 with tab2:
-    st.subheader("⚙️ Konfigurasi Model")
-    
-    # Analysis Type
+    st.subheader("Konfigurasi Model")
+
     analysis_type = st.radio("Tipe Analisis:", ["Klasifikasi", "Regresi"], horizontal=True)
-    
-    # Target & Features
+
     all_cols = df.columns.tolist()
     target_col = st.selectbox("Pilih Target", all_cols)
     feature_cols = st.multiselect("Pilih Fitur", [c for c in all_cols if c != target_col], default=[c for c in ['temp', 'hum', 'windspeed', 'season'] if c != target_col])
-    
+
     if not feature_cols:
         st.warning("Pilih minimal 1 fitur.")
         st.stop()
 
-    # Algorithm Selection
     if analysis_type == "Regresi":
         algo = st.selectbox("Algoritma", ["Linear Regression", "Random Forest", "SVR", "KNN", "Decision Tree"])
     else:
         algo = st.selectbox("Algoritma", ["Logistic Regression", "Random Forest", "SVM", "KNN", "Decision Tree"])
 
-    # Training Settings
     test_size = st.slider("Ukuran Data Test (%)", 10, 40, 20) / 100.0
-    
-    if st.button("🚀 Latih Model", use_container_width=True):
-        with st.spinner('Melatih model...'):
+
+    if st.button("Latih Model", use_container_width=True):
+        with st.spinner("Sedang melatih model..."):
             X = df[feature_cols]
             y = df[target_col]
-            
+
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
-            
-            # Model Initialization
+
             model = None
             if analysis_type == "Regresi":
                 if algo == "Linear Regression": model = LinearRegression()
-                elif algo == "Random Forest": model = RandomForestRegressor()
+                elif algo == "Random Forest": model = RandomForestRegressor(n_estimators=100, random_state=42)
                 elif algo == "SVR": model = SVR()
                 elif algo == "KNN": model = KNeighborsRegressor()
-                elif algo == "Decision Tree": model = DecisionTreeRegressor()
+                elif algo == "Decision Tree": model = DecisionTreeRegressor(random_state=42)
             else:
                 if algo == "Logistic Regression": model = LogisticRegression(max_iter=1000)
-                elif algo == "Random Forest": model = RandomForestClassifier()
+                elif algo == "Random Forest": model = RandomForestClassifier(n_estimators=100, random_state=42)
                 elif algo == "SVM": model = SVC()
                 elif algo == "KNN": model = KNeighborsClassifier()
-                elif algo == "Decision Tree": model = DecisionTreeClassifier()
-            
-            # Train
-            model.fit(X_train, y_train)
-            y_pred = model.predict(X_test)
-            
-            # Results
-            st.subheader("🏆 Hasil Evaluasi Model")
-            res_col1, res_col2 = st.columns(2)
-            
-            with res_col1:
-                st.write("### Metrik")
-                if analysis_type == "Regresi":
-                    st.metric("R2 Score", f"{r2_score(y_test, y_pred):.4f}")
-                    st.metric("RMSE", f"{np.sqrt(mean_squared_error(y_test, y_pred)):.4f}")
-                else:
-                    st.metric("Accuracy", f"{accuracy_score(y_test, y_pred):.4f}")
-                    st.metric("F1 Score", f"{f1_score(y_test, y_pred, average='weighted'):.4f}")
-            
-            with res_col2:
-                st.write("### Visualisasi Prediksi")
-                if analysis_type == "Regresi":
-                    fig_pred = px.scatter(x=y_test, y=y_pred, labels={'x': 'Aktual', 'y': 'Prediksi'}, title='Prediksi vs Aktual')
-                    fig_pred.add_trace(go.Scatter(x=[y.min(), y.max()], y=[y.min(), y.max()], mode='lines', name='Garis Ideal', line=dict(color='red', dash='dash')))
-                    st.plotly_chart(fig_pred, use_container_width=True)
-                else:
-                    cm = confusion_matrix(y_test, y_pred)
-                    fig_cm = px.imshow(cm, text_auto=True, title='Confusion Matrix', labels=dict(x="Prediksi", y="Aktual"))
-                    st.plotly_chart(fig_cm, use_container_width=True)
+                elif algo == "Decision Tree": model = DecisionTreeClassifier(random_state=42)
+
+            try:
+                model.fit(X_train, y_train)
+                y_pred = model.predict(X_test)
+
+                st.subheader("Hasil Evaluasi Model")
+                res_col1, res_col2 = st.columns(2)
+
+                with res_col1:
+                    st.write("**Metrik Evaluasi**")
+                    if analysis_type == "Regresi":
+                        st.metric("R2 Score", f"{r2_score(y_test, y_pred):.4f}")
+                        st.metric("RMSE", f"{np.sqrt(mean_squared_error(y_test, y_pred)):.4f}")
+                        st.metric("MAE", f"{mean_absolute_error(y_test, y_pred):.4f}")
+                    else:
+                        st.metric("Accuracy", f"{accuracy_score(y_test, y_pred):.4f}")
+                        st.metric("F1 Score", f"{f1_score(y_test, y_pred, average='weighted', zero_division=0):.4f}")
+                        st.metric("Precision", f"{precision_score(y_test, y_pred, average='weighted', zero_division=0):.4f}")
+
+                with res_col2:
+                    st.write("**Visualisasi Prediksi**")
+                    if analysis_type == "Regresi":
+                        fig_pred = px.scatter(x=y_test, y=y_pred, labels={'x': 'Aktual', 'y': 'Prediksi'}, template='plotly_white')
+                        fig_pred.add_trace(go.Scatter(x=[y.min(), y.max()], y=[y.min(), y.max()], mode='lines', name='Garis Ideal', line=dict(color='red', dash='dash')))
+                        fig_pred.update_layout(showlegend=False)
+                        st.plotly_chart(fig_pred, use_container_width=True)
+                    else:
+                        cm = confusion_matrix(y_test, y_pred)
+                        fig_cm = px.imshow(cm, text_auto=True, labels=dict(x="Prediksi", y="Aktual"), template='plotly_white')
+                        st.plotly_chart(fig_cm, use_container_width=True)
+
+            except Exception as e:
+                st.error(f"Terjadi error saat melatih model: {e}")
 
 with tab3:
-    st.subheader("📋 Data Mentah")
+    st.subheader("Data Mentah")
     st.dataframe(df, use_container_width=True)
