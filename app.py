@@ -85,20 +85,21 @@ with col4:
 tab1, tab2, tab3, tab4 = st.tabs(["Explorasi Data", "Pemodelan", "Prediksi", "Data Mentah"])
 
 with tab1:
-    if 'dteday' in df.columns and 'cnt' in df.columns:
+    df_temp = df.copy()
+    if 'dteday' in df_temp.columns and 'cnt' in df_temp.columns:
         st.subheader("Tren Penyewaan Sepeda per Jam")
-        df['dteday'] = pd.to_datetime(df['dteday'])
-        if 'hr' in df.columns:
-            df['datetime'] = df['dteday'] + pd.to_timedelta(df['hr'], unit='h')
-            fig_ts = px.line(df, x='datetime', y='cnt', labels={'datetime': 'Waktu', 'cnt': 'Jumlah Penyewaan'}, template='plotly_white')
+        df_temp['dteday'] = pd.to_datetime(df_temp['dteday'])
+        if 'hr' in df_temp.columns:
+            df_temp['datetime'] = df_temp['dteday'] + pd.to_timedelta(df_temp['hr'], unit='h')
+            fig_ts = px.line(df_temp, x='datetime', y='cnt', labels={'datetime': 'Waktu', 'cnt': 'Jumlah Penyewaan'}, template='plotly_white')
         else:
-            fig_ts = px.line(df, x='dteday', y='cnt', labels={'dteday': 'Tanggal', 'cnt': 'Jumlah Penyewaan'}, template='plotly_white')
+            fig_ts = px.line(df_temp, x='dteday', y='cnt', labels={'dteday': 'Tanggal', 'cnt': 'Jumlah Penyewaan'}, template='plotly_white')
         fig_ts.update_layout(showlegend=False)
         st.plotly_chart(fig_ts, use_container_width=True)
 
-        if 'hr' in df.columns:
+        if 'hr' in df_temp.columns:
             st.subheader("Rata-rata Penyewaan per Jam")
-            hourly_avg = df.groupby('hr')['cnt'].mean().reset_index()
+            hourly_avg = df_temp.groupby('hr')['cnt'].mean().reset_index()
             fig_hourly = px.bar(hourly_avg, x='hr', y='cnt', labels={'hr': 'Jam', 'cnt': 'Rata-rata Penyewaan'}, template='plotly_white')
             fig_hourly.update_layout(showlegend=False)
             st.plotly_chart(fig_hourly, use_container_width=True)
