@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
+import gc
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
@@ -171,13 +172,13 @@ with tab2:
             model = None
             if analysis_type == "Regresi":
                 if algo == "Linear Regression": model = LinearRegression()
-                elif algo == "Random Forest": model = RandomForestRegressor(n_estimators=200, random_state=42)
+                elif algo == "Random Forest": model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
                 elif algo == "SVR": model = SVR()
                 elif algo == "KNN": model = KNeighborsRegressor()
                 elif algo == "Decision Tree": model = DecisionTreeRegressor(random_state=42)
             else:
                 if algo == "Logistic Regression": model = LogisticRegression(max_iter=1000)
-                elif algo == "Random Forest": model = RandomForestClassifier(n_estimators=200, random_state=42)
+                elif algo == "Random Forest": model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
                 elif algo == "SVM": model = SVC()
                 elif algo == "KNN": model = KNeighborsClassifier()
                 elif algo == "Decision Tree": model = DecisionTreeClassifier(random_state=42)
@@ -261,6 +262,9 @@ with tab2:
                     fig_imp.update_layout(showlegend=False)
                     st.plotly_chart(fig_imp, use_container_width=True)
 
+                del model, X_train, X_test, y_train, y_test, y_pred, y_pred_train
+                gc.collect()
+
             except Exception as e:
                 st.error(f"Terjadi error saat melatih model: {e}")
 
@@ -341,10 +345,10 @@ with tab3:
             
             try:
                 if model_type == "Regresi (Jumlah Sepeda)":
-                    model = RandomForestRegressor(n_estimators=200, random_state=42)
+                    model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
                     model.fit(X_train_pred, y_train_pred)
                 else:
-                    model = RandomForestClassifier(n_estimators=200, random_state=42)
+                    model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
                     model.fit(X_train_pred, y_train_pred)
                 
                 input_df = pd.DataFrame([input_data])
@@ -372,6 +376,10 @@ with tab3:
                             status = "Tinggi"
                             color = "green"
                         st.markdown(f"<h3 style='color:{color}'>Status: {status}</h3>", unsafe_allow_html=True)
+
+                del model, X_train_pred, X_test_pred, y_train_pred, y_test_pred
+                gc.collect()
+
             except Exception as e:
                 st.error(f"Error: {e}")
 
