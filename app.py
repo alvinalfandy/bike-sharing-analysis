@@ -1,19 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 import os
-import gc
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression, LogisticRegression
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-from sklearn.svm import SVC, SVR
-from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
-from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
-import plotly.express as px
-import plotly.graph_objects as go
 
 st.set_page_config(
     page_title="Analisis Bike Sharing",
@@ -100,6 +88,11 @@ with col4:
 tab1, tab2, tab3, tab4 = st.tabs(["Explorasi Data", "Pemodelan", "Prediksi", "Data Mentah"])
 
 with tab1:
+    import plotly.express as px
+    import plotly.graph_objects as go
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+
     df_temp = df.copy()
     if 'dteday' in df_temp.columns and 'cnt' in df_temp.columns:
         st.subheader("Tren Penyewaan Sepeda per Jam")
@@ -140,6 +133,17 @@ with tab1:
             st.plotly_chart(fig_dist, use_container_width=True)
 
 with tab2:
+    import gc
+    import plotly.express as px
+    import plotly.graph_objects as go
+    from sklearn.model_selection import train_test_split
+    from sklearn.linear_model import LinearRegression, LogisticRegression
+    from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+    from sklearn.svm import SVC, SVR
+    from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
+    from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
+    from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
+
     st.subheader("Konfigurasi Model")
 
     analysis_type = st.radio("Tipe Analisis:", ["Klasifikasi", "Regresi"], horizontal=True)
@@ -269,6 +273,10 @@ with tab2:
                 st.error(f"Terjadi error saat melatih model: {e}")
 
 with tab3:
+    import gc
+    from sklearn.model_selection import train_test_split
+    from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+
     st.subheader("Prediksi Peluang Penyewaan Sepeda")
     
     model_type = st.radio("Jenis Prediksi:", ["Regresi (Jumlah Sepeda)", "Klasifikasi (Tinggi/Rendah)"], horizontal=True)
