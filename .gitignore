@@ -28,3 +28,9 @@ Desktop.ini
 .idea/
 *.swp
 *.swo
+
+# Laporan & Jurnal (tidak perlu di repo)
+jurnal/
+*.zip
+*.docx
+generate_laporan.py
