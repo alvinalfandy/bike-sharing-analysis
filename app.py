@@ -36,6 +36,29 @@ def load_data(uploaded_file):
             return pd.read_csv(default_path)
         return None
 
+@st.cache_resource
+def train_model(algo, analysis_type, X_train, y_train):
+    from sklearn.linear_model import LinearRegression, LogisticRegression
+    from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+    from sklearn.svm import SVC, SVR
+    from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
+    from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
+
+    if analysis_type == "Regresi":
+        if algo == "Linear Regression": model = LinearRegression()
+        elif algo == "Random Forest": model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
+        elif algo == "SVR": model = SVR()
+        elif algo == "KNN": model = KNeighborsRegressor()
+        elif algo == "Decision Tree": model = DecisionTreeRegressor(random_state=42)
+    else:
+        if algo == "Logistic Regression": model = LogisticRegression(max_iter=1000)
+        elif algo == "Random Forest": model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
+        elif algo == "SVM": model = SVC()
+        elif algo == "KNN": model = KNeighborsClassifier()
+        elif algo == "Decision Tree": model = DecisionTreeClassifier(random_state=42)
+    model.fit(X_train, y_train)
+    return model
+
 with st.sidebar:
     st.title("Analisis Bike Sharing")
     st.markdown("---")
@@ -64,9 +87,6 @@ if df is None:
 
 st.write(f"Dataset: {df.shape[0]:,} baris, {df.shape[1]} kolom")
 
-# Ensure df is a clean copy to avoid cache mutation issues
-df = df.copy()
-
 st.subheader("Statistik Dataset")
 col1, col2, col3, col4 = st.columns(4)
 with col1:
@@ -77,13 +97,9 @@ with col3:
     numeric_cols = df.select_dtypes(include=['float64', 'int64']).columns
     if 'cnt' in df.columns:
         st.metric("Rata-rata Penyewaan", f"{int(df['cnt'].mean()):,}")
-    elif len(numeric_cols) > 0:
-        st.metric(f"Rata-rata {numeric_cols[0]}", f"{df[numeric_cols[0]].mean():.2f}")
 with col4:
     if 'cnt' in df.columns:
         st.metric("Total Penyewaan", f"{int(df['cnt'].sum()):,}")
-    elif len(numeric_cols) > 0:
-        st.metric(f"Total {numeric_cols[0]}", f"{df[numeric_cols[0]].sum():.2f}")
 
 tab1, tab2, tab3, tab4 = st.tabs(["Explorasi Data", "Pemodelan", "Prediksi", "Data Mentah"])
 
@@ -93,9 +109,9 @@ with tab1:
     import matplotlib.pyplot as plt
     import seaborn as sns
 
-    df_temp = df.copy()
-    if 'dteday' in df_temp.columns and 'cnt' in df_temp.columns:
+    if 'dteday' in df.columns and 'cnt' in df.columns:
         st.subheader("Tren Penyewaan Sepeda per Jam")
+        df_temp = df.copy()
         df_temp['dteday'] = pd.to_datetime(df_temp['dteday'])
         if 'hr' in df_temp.columns:
             df_temp['datetime'] = df_temp['dteday'] + pd.to_timedelta(df_temp['hr'], unit='h')
@@ -111,6 +127,7 @@ with tab1:
             fig_hourly = px.bar(hourly_avg, x='hr', y='cnt', labels={'hr': 'Jam', 'cnt': 'Rata-rata Penyewaan'}, template='plotly_white')
             fig_hourly.update_layout(showlegend=False)
             st.plotly_chart(fig_hourly, use_container_width=True)
+        del df_temp
 
     col_left, col_right = st.columns(2)
     with col_left:
@@ -120,8 +137,7 @@ with tab1:
             fig_corr, ax = plt.subplots(figsize=(10, 8))
             sns.heatmap(corr, annot=True, fmt=".2f", cmap='coolwarm', ax=ax, square=True)
             st.pyplot(fig_corr)
-        else:
-            st.info("Tidak cukup kolom numerik untuk menampilkan korelasi.")
+            plt.close(fig_corr)
 
     with col_right:
         st.subheader("Distribusi Fitur")
@@ -133,15 +149,9 @@ with tab1:
             st.plotly_chart(fig_dist, use_container_width=True)
 
 with tab2:
-    import gc
     import plotly.express as px
     import plotly.graph_objects as go
     from sklearn.model_selection import train_test_split
-    from sklearn.linear_model import LinearRegression, LogisticRegression
-    from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-    from sklearn.svm import SVC, SVR
-    from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
-    from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
     from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
 
     st.subheader("Konfigurasi Model")
@@ -168,27 +178,13 @@ with tab2:
 
     if st.button("Latih Model", use_container_width=True):
         with st.spinner("Sedang melatih model..."):
-            X = df[feature_cols]
-            y = df[target_col]
+            X = df[feature_cols].values
+            y = df[target_col].values
 
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
 
-            model = None
-            if analysis_type == "Regresi":
-                if algo == "Linear Regression": model = LinearRegression()
-                elif algo == "Random Forest": model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
-                elif algo == "SVR": model = SVR()
-                elif algo == "KNN": model = KNeighborsRegressor()
-                elif algo == "Decision Tree": model = DecisionTreeRegressor(random_state=42)
-            else:
-                if algo == "Logistic Regression": model = LogisticRegression(max_iter=1000)
-                elif algo == "Random Forest": model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
-                elif algo == "SVM": model = SVC()
-                elif algo == "KNN": model = KNeighborsClassifier()
-                elif algo == "Decision Tree": model = DecisionTreeClassifier(random_state=42)
-
             try:
-                model.fit(X_train, y_train)
+                model = train_model(algo, analysis_type, X_train, y_train)
                 y_pred_train = model.predict(X_train)
                 y_pred = model.predict(X_test)
 
@@ -217,14 +213,12 @@ with tab2:
                         st.write("**Aktual vs Prediksi**")
                         fig_pred = px.scatter(x=y_test, y=y_pred, labels={'x': 'Aktual', 'y': 'Prediksi'}, template='plotly_white', opacity=0.6)
                         fig_pred.add_trace(go.Scatter(x=[y.min(), y.max()], y=[y.min(), y.max()], mode='lines', name='Garis Ideal', line=dict(color='red', dash='dash')))
-                        fig_pred.update_layout(showlegend=True)
                         st.plotly_chart(fig_pred, use_container_width=True)
                     with viz2:
                         st.write("**Residual Plot**")
-                        residuals = y_test.values - y_pred
+                        residuals = y_test - y_pred
                         fig_res = px.scatter(x=y_pred, y=residuals, labels={'x': 'Prediksi', 'y': 'Residual'}, template='plotly_white', opacity=0.6)
                         fig_res.add_hline(y=0, line_dash="dash", line_color="red")
-                        fig_res.update_layout(showlegend=False)
                         st.plotly_chart(fig_res, use_container_width=True)
 
                 else:
@@ -266,14 +260,10 @@ with tab2:
                     fig_imp.update_layout(showlegend=False)
                     st.plotly_chart(fig_imp, use_container_width=True)
 
-                del model, X_train, X_test, y_train, y_test, y_pred, y_pred_train
-                gc.collect()
-
             except Exception as e:
                 st.error(f"Terjadi error saat melatih model: {e}")
 
 with tab3:
-    import gc
     from sklearn.model_selection import train_test_split
     from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
@@ -340,24 +330,19 @@ with tab3:
                 st.error(f"Fitur {missing_features} tidak ditemukan di dataset.")
                 st.stop()
             
-            X_pred = df[feature_cols_pred]
-            y_pred_target = df[target_col_pred]
+            X_pred = df[feature_cols_pred].values
+            y_pred_target = df[target_col_pred].values
             
             if model_type == "Klasifikasi (Tinggi/Rendah)":
-                median_cnt = y_pred_target.median()
+                median_cnt = np.median(y_pred_target)
                 y_pred_target = (y_pred_target >= median_cnt).astype(int)
-            
-            X_train_pred, X_test_pred, y_train_pred, y_test_pred = train_test_split(X_pred, y_pred_target, test_size=0.2, random_state=42)
-            
-            model = None
             
             try:
                 if model_type == "Regresi (Jumlah Sepeda)":
                     model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
-                    model.fit(X_train_pred, y_train_pred)
                 else:
                     model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
-                    model.fit(X_train_pred, y_train_pred)
+                model.fit(X_pred, y_pred_target)
                 
                 input_df = pd.DataFrame([input_data])
                 
@@ -371,22 +356,16 @@ with tab3:
                         st.metric("Prediksi Kategori", "Tinggi" if pred_result >= 1 else "Rendah")
                 with col_b:
                     if model_type == "Regresi (Jumlah Sepeda)":
-                        if pred_result < df['cnt'].quantile(0.25):
-                            status = "Sangat Rendah"
-                            color = "red"
-                        elif pred_result < df['cnt'].quantile(0.50):
-                            status = "Rendah"
-                            color = "orange"
-                        elif pred_result < df['cnt'].quantile(0.75):
-                            status = "Sedang"
-                            color = "blue"
+                        q25, q50, q75 = np.percentile(df['cnt'], [25, 50, 75])
+                        if pred_result < q25:
+                            status, color = "Sangat Rendah", "red"
+                        elif pred_result < q50:
+                            status, color = "Rendah", "orange"
+                        elif pred_result < q75:
+                            status, color = "Sedang", "blue"
                         else:
-                            status = "Tinggi"
-                            color = "green"
+                            status, color = "Tinggi", "green"
                         st.markdown(f"<h3 style='color:{color}'>Status: {status}</h3>", unsafe_allow_html=True)
-
-                del model, X_train_pred, X_test_pred, y_train_pred, y_test_pred
-                gc.collect()
 
             except Exception as e:
                 st.error(f"Error: {e}")
