@@ -26,14 +26,20 @@ st.title("Dashboard Analisis Bike Sharing")
 def load_data(uploaded_file):
     if uploaded_file is not None:
         try:
-            return pd.read_csv(uploaded_file)
+            df = pd.read_csv(uploaded_file)
+            if len(df) > 5000:
+                df = df.sample(5000, random_state=42).reset_index(drop=True)
+            return df
         except Exception as e:
             st.error(f"Gagal membaca file: {e}")
             return None
     else:
         default_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bike-sharing-dataset", "hour.csv")
         if os.path.exists(default_path):
-            return pd.read_csv(default_path)
+            df = pd.read_csv(default_path)
+            if len(df) > 5000:
+                df = df.sample(5000, random_state=42).reset_index(drop=True)
+            return df
         return None
 
 @st.cache_resource
@@ -46,13 +52,13 @@ def train_model(algo, analysis_type, X_train, y_train):
 
     if analysis_type == "Regresi":
         if algo == "Linear Regression": model = LinearRegression()
-        elif algo == "Random Forest": model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
+        elif algo == "Random Forest": model = RandomForestRegressor(n_estimators=50, random_state=42, n_jobs=-1)
         elif algo == "SVR": model = SVR()
         elif algo == "KNN": model = KNeighborsRegressor()
         elif algo == "Decision Tree": model = DecisionTreeRegressor(random_state=42)
     else:
         if algo == "Logistic Regression": model = LogisticRegression(max_iter=1000)
-        elif algo == "Random Forest": model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
+        elif algo == "Random Forest": model = RandomForestClassifier(n_estimators=50, random_state=42, n_jobs=-1)
         elif algo == "SVM": model = SVC()
         elif algo == "KNN": model = KNeighborsClassifier()
         elif algo == "Decision Tree": model = DecisionTreeClassifier(random_state=42)
@@ -134,10 +140,9 @@ with tab1:
         st.subheader("Matriks Korelasi")
         if len(numeric_cols) > 1:
             corr = df[numeric_cols].corr()
-            fig_corr, ax = plt.subplots(figsize=(10, 8))
-            sns.heatmap(corr, annot=True, fmt=".2f", cmap='coolwarm', ax=ax, square=True)
-            st.pyplot(fig_corr)
-            plt.close(fig_corr)
+            fig_corr = px.imshow(corr, text_auto=".2f", color_continuous_scale='RdBu_r', aspect="auto", zmin=-1, zmax=1)
+            fig_corr.update_layout(template='plotly_white')
+            st.plotly_chart(fig_corr, use_container_width=True)
 
     with col_right:
         st.subheader("Distribusi Fitur")
@@ -339,9 +344,9 @@ with tab3:
             
             try:
                 if model_type == "Regresi (Jumlah Sepeda)":
-                    model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
+                    model = RandomForestRegressor(n_estimators=50, random_state=42, n_jobs=-1)
                 else:
-                    model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
+                    model = RandomForestClassifier(n_estimators=50, random_state=42, n_jobs=-1)
                 model.fit(X_pred, y_pred_target)
                 
                 input_df = pd.DataFrame([input_data])
