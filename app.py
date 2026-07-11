@@ -57,8 +57,15 @@ with st.sidebar:
     else:
         st.caption("Menggunakan dataset default: hour.csv")
     st.markdown("---")
-    st.markdown("**Kelompok 1**")
+    st.subheader("Kelompok 1")
     st.caption("Praktikum Data Mining 2026")
+    st.markdown("""
+    | Nama | GitHub |
+    |------|--------|
+    | Alvin Alfandy | [alvinalfandy](https://github.com/alvinalfandy) |
+    | Abidzar Sabil Handoyo | [eufroshine](https://github.com/eufroshine) |
+    | Ridho Fauzi | [ridhoofauzii](https://github.com/ridhoofauzii) |
+    """)
 
 df = load_data(uploaded_file)
 
@@ -137,10 +144,11 @@ with tab2:
     analysis_type = st.radio("Tipe Analisis:", ["Klasifikasi", "Regresi"], horizontal=True)
 
     numeric_cols_model = df.select_dtypes(include=['float64', 'int64']).columns.tolist()
-    all_cols = numeric_cols_model
-    target_col = st.selectbox("Pilih Target", all_cols, index=all_cols.index('cnt') if 'cnt' in all_cols else 0)
-    default_features = [c for c in ['temp', 'hum', 'windspeed', 'season'] if c in all_cols and c != target_col]
-    feature_cols = st.multiselect("Pilih Fitur", [c for c in all_cols if c != target_col], default=default_features)
+    exclude_cols = ['cnt', 'casual', 'registered', 'instant']
+    all_cols = [c for c in numeric_cols_model if c not in exclude_cols]
+    target_col = st.selectbox("Pilih Target", numeric_cols_model, index=numeric_cols_model.index('cnt') if 'cnt' in numeric_cols_model else 0)
+    default_features = [c for c in all_cols if c != target_col]
+    feature_cols = st.multiselect("Pilih Fitur", [c for c in numeric_cols_model if c != target_col and c not in exclude_cols], default=default_features)
 
     if not feature_cols:
         st.warning("Pilih minimal 1 fitur.")
@@ -163,46 +171,95 @@ with tab2:
             model = None
             if analysis_type == "Regresi":
                 if algo == "Linear Regression": model = LinearRegression()
-                elif algo == "Random Forest": model = RandomForestRegressor(n_estimators=100, random_state=42)
+                elif algo == "Random Forest": model = RandomForestRegressor(n_estimators=200, random_state=42)
                 elif algo == "SVR": model = SVR()
                 elif algo == "KNN": model = KNeighborsRegressor()
                 elif algo == "Decision Tree": model = DecisionTreeRegressor(random_state=42)
             else:
                 if algo == "Logistic Regression": model = LogisticRegression(max_iter=1000)
-                elif algo == "Random Forest": model = RandomForestClassifier(n_estimators=100, random_state=42)
+                elif algo == "Random Forest": model = RandomForestClassifier(n_estimators=200, random_state=42)
                 elif algo == "SVM": model = SVC()
                 elif algo == "KNN": model = KNeighborsClassifier()
                 elif algo == "Decision Tree": model = DecisionTreeClassifier(random_state=42)
 
             try:
                 model.fit(X_train, y_train)
+                y_pred_train = model.predict(X_train)
                 y_pred = model.predict(X_test)
 
                 st.subheader("Hasil Evaluasi Model")
-                res_col1, res_col2 = st.columns(2)
 
-                with res_col1:
-                    st.write("**Metrik Evaluasi**")
-                    if analysis_type == "Regresi":
-                        st.metric("R2 Score", f"{r2_score(y_test, y_pred):.4f}")
-                        st.metric("RMSE", f"{np.sqrt(mean_squared_error(y_test, y_pred)):.4f}")
-                        st.metric("MAE", f"{mean_absolute_error(y_test, y_pred):.4f}")
-                    else:
-                        st.metric("Accuracy", f"{accuracy_score(y_test, y_pred):.4f}")
-                        st.metric("F1 Score", f"{f1_score(y_test, y_pred, average='weighted', zero_division=0):.4f}")
-                        st.metric("Precision", f"{precision_score(y_test, y_pred, average='weighted', zero_division=0):.4f}")
+                if analysis_type == "Regresi":
+                    r2_train = r2_score(y_train, y_pred_train)
+                    r2_test = r2_score(y_test, y_pred)
+                    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+                    mae = mean_absolute_error(y_test, y_pred)
 
-                with res_col2:
-                    st.write("**Visualisasi Prediksi**")
-                    if analysis_type == "Regresi":
-                        fig_pred = px.scatter(x=y_test, y=y_pred, labels={'x': 'Aktual', 'y': 'Prediksi'}, template='plotly_white')
+                    met1, met2, met3, met4 = st.columns(4)
+                    with met1: st.metric("R2 Train", f"{r2_train:.4f}")
+                    with met2: st.metric("R2 Test", f"{r2_test:.4f}")
+                    with met3: st.metric("RMSE", f"{rmse:.2f}")
+                    with met4: st.metric("MAE", f"{mae:.2f}")
+
+                    fig_bar = go.Figure()
+                    fig_bar.add_trace(go.Bar(name='Train', x=['R2 Score'], y=[r2_train], marker_color='#3498db'))
+                    fig_bar.add_trace(go.Bar(name='Test', x=['R2 Score'], y=[r2_test], marker_color='#e74c3c'))
+                    fig_bar.update_layout(title='Perbandingan R2 Score (Train vs Test)', yaxis_title='R2 Score', template='plotly_white', barmode='group', yaxis_range=[0, 1])
+                    st.plotly_chart(fig_bar, use_container_width=True)
+
+                    viz1, viz2 = st.columns(2)
+                    with viz1:
+                        st.write("**Aktual vs Prediksi**")
+                        fig_pred = px.scatter(x=y_test, y=y_pred, labels={'x': 'Aktual', 'y': 'Prediksi'}, template='plotly_white', opacity=0.6)
                         fig_pred.add_trace(go.Scatter(x=[y.min(), y.max()], y=[y.min(), y.max()], mode='lines', name='Garis Ideal', line=dict(color='red', dash='dash')))
-                        fig_pred.update_layout(showlegend=False)
+                        fig_pred.update_layout(showlegend=True)
                         st.plotly_chart(fig_pred, use_container_width=True)
-                    else:
+                    with viz2:
+                        st.write("**Residual Plot**")
+                        residuals = y_test.values - y_pred
+                        fig_res = px.scatter(x=y_pred, y=residuals, labels={'x': 'Prediksi', 'y': 'Residual'}, template='plotly_white', opacity=0.6)
+                        fig_res.add_hline(y=0, line_dash="dash", line_color="red")
+                        fig_res.update_layout(showlegend=False)
+                        st.plotly_chart(fig_res, use_container_width=True)
+
+                else:
+                    acc_train = accuracy_score(y_train, y_pred_train)
+                    acc_test = accuracy_score(y_test, y_pred)
+                    f1 = f1_score(y_test, y_pred, average='weighted', zero_division=0)
+                    prec = precision_score(y_test, y_pred, average='weighted', zero_division=0)
+                    rec = recall_score(y_test, y_pred, average='weighted', zero_division=0)
+
+                    met1, met2, met3, met4, met5 = st.columns(5)
+                    with met1: st.metric("Accuracy Train", f"{acc_train:.4f}")
+                    with met2: st.metric("Accuracy Test", f"{acc_test:.4f}")
+                    with met3: st.metric("F1 Score", f"{f1:.4f}")
+                    with met4: st.metric("Precision", f"{prec:.4f}")
+                    with met5: st.metric("Recall", f"{rec:.4f}")
+
+                    fig_bar = go.Figure()
+                    fig_bar.add_trace(go.Bar(name='Train', x=['Accuracy'], y=[acc_train], marker_color='#3498db'))
+                    fig_bar.add_trace(go.Bar(name='Test', x=['Accuracy'], y=[acc_test], marker_color='#e74c3c'))
+                    fig_bar.update_layout(title='Perbandingan Akurasi (Train vs Test)', yaxis_title='Accuracy', template='plotly_white', barmode='group', yaxis_range=[0, 1])
+                    st.plotly_chart(fig_bar, use_container_width=True)
+
+                    viz1, viz2 = st.columns(2)
+                    with viz1:
+                        st.write("**Confusion Matrix**")
                         cm = confusion_matrix(y_test, y_pred)
-                        fig_cm = px.imshow(cm, text_auto=True, labels=dict(x="Prediksi", y="Aktual"), template='plotly_white')
+                        fig_cm = px.imshow(cm, text_auto=True, labels=dict(x="Prediksi", y="Aktual"), template='plotly_white', color_continuous_scale='Blues')
                         st.plotly_chart(fig_cm, use_container_width=True)
+                    with viz2:
+                        st.write("**Distribusi Prediksi**")
+                        pred_df = pd.DataFrame({'Kategori': ['Rendah', 'Tinggi'], 'Jumlah': [(y_pred == 0).sum(), (y_pred == 1).sum()]})
+                        fig_dist = px.bar(pred_df, x='Kategori', y='Jumlah', template='plotly_white', color='Kategori', color_discrete_sequence=['#3498db', '#e74c3c'])
+                        st.plotly_chart(fig_dist, use_container_width=True)
+
+                if hasattr(model, 'feature_importances_'):
+                    st.subheader("Feature Importance")
+                    imp_df = pd.DataFrame({'Fitur': feature_cols, 'Importance': model.feature_importances_}).sort_values('Importance', ascending=True)
+                    fig_imp = px.bar(imp_df, x='Importance', y='Fitur', orientation='h', template='plotly_white', color='Importance', color_continuous_scale='Viridis')
+                    fig_imp.update_layout(showlegend=False)
+                    st.plotly_chart(fig_imp, use_container_width=True)
 
             except Exception as e:
                 st.error(f"Terjadi error saat melatih model: {e}")
@@ -215,37 +272,57 @@ with tab3:
     st.subheader("Input Data Prediksi")
     st.caption("Masukkan kondisi untuk memprediksi jumlah penyewaan sepeda")
     
+    pred_exclude = ['cnt', 'casual', 'registered', 'instant']
+    pred_features = [c for c in df.select_dtypes(include=['float64','int64']).columns if c not in pred_exclude]
+    
     col1, col2, col3, col4 = st.columns(4)
+    input_data = {}
     with col1:
-        temp = st.slider("Suhu", min_value=0.0, max_value=1.0, value=0.5, step=0.01)
-        st.caption("Ternormalisasi: 0 = -8 derajat C, 1 = 39 derajat C")
-        hum = st.slider("Kelembaban", min_value=0.0, max_value=1.0, value=0.5, step=0.01)
-        st.caption("Ternormalisasi: 0 = Kering, 1 = Lembab")
+        if 'season' in pred_features:
+            input_data['season'] = st.slider("Musim", min_value=1, max_value=4, value=2, step=1)
+            st.caption("1=Semi, 2=Panas, 3=Gugur, 4=Dingin")
+        if 'yr' in pred_features:
+            input_data['yr'] = st.slider("Tahun", min_value=0, max_value=1, value=1, step=1)
+            st.caption("0=2011, 1=2012")
+        if 'mnth' in pred_features:
+            input_data['mnth'] = st.slider("Bulan", min_value=1, max_value=12, value=6, step=1)
+        if 'hr' in pred_features:
+            input_data['hr'] = st.slider("Jam", min_value=0, max_value=23, value=12, step=1)
     with col2:
-        windspeed = st.slider("Kecepatan Angin", min_value=0.0, max_value=1.0, value=0.3, step=0.01)
-        st.caption("Ternormalisasi: 0 = Tenang, 1 = Kencang")
-        season = st.slider("Musim", min_value=1, max_value=4, value=2, step=1)
-        st.caption("1 = Semi, 2 = Panas, 3 = Gugur, 4 = Dingin")
+        if 'holiday' in pred_features:
+            input_data['holiday'] = st.slider("Hari Libur", min_value=0, max_value=1, value=0, step=1)
+            st.caption("0=Bukan, 1=Ya")
+        if 'weekday' in pred_features:
+            input_data['weekday'] = st.slider("Hari", min_value=0, max_value=6, value=3, step=1)
+            st.caption("0=Minggu ... 6=Sabtu")
+        if 'workingday' in pred_features:
+            input_data['workingday'] = st.slider("Hari Kerja", min_value=0, max_value=1, value=1, step=1)
+            st.caption("0=Bukan, 1=Ya")
+        if 'weathersit' in pred_features:
+            input_data['weathersit'] = st.slider("Cuaca", min_value=1, max_value=4, value=1, step=1)
+            st.caption("1=Cerah, 2=Berawan, 3=Hujan, 4=Ekstrem")
     with col3:
-        weathersit = st.slider("Situasi Cuaca", min_value=1, max_value=4, value=1, step=1)
-        st.caption("1 = Cerah, 2 = Berawan, 3 = Hujan Ringan, 4 = Hujan Deras")
-        holiday = st.slider("Hari Libur", min_value=0, max_value=1, value=0, step=1)
-        st.caption("0 = Bukan, 1 = Ya")
+        if 'temp' in pred_features:
+            input_data['temp'] = st.slider("Suhu", min_value=0.0, max_value=1.0, value=0.5, step=0.01)
+            st.caption("Ternormalisasi (0=-8C, 1=39C)")
+        if 'atemp' in pred_features:
+            input_data['atemp'] = st.slider("Suhu Terasa", min_value=0.0, max_value=1.0, value=0.5, step=0.01)
+            st.caption("Ternormalisasi")
     with col4:
-        workingday = st.slider("Hari Kerja", min_value=0, max_value=1, value=1, step=1)
-        st.caption("0 = Bukan, 1 = Ya")
-        yr = st.slider("Tahun", min_value=0, max_value=1, value=1, step=1)
-        st.caption("0 = 2011, 1 = 2012")
+        if 'hum' in pred_features:
+            input_data['hum'] = st.slider("Kelembaban", min_value=0.0, max_value=1.0, value=0.5, step=0.01)
+            st.caption("Ternormalisasi (0=Kering, 1=Lembab)")
+        if 'windspeed' in pred_features:
+            input_data['windspeed'] = st.slider("Kecepatan Angin", min_value=0.0, max_value=1.0, value=0.3, step=0.01)
+            st.caption("Ternormalisasi (0=Tenang, 1=Kencang)")
 
     st.subheader("Hasil Prediksi")
     
     if st.button("Hitung Prediksi", use_container_width=True):
         with st.spinner("Menghitung..."):
-            # Default features for prediction
-            feature_cols_pred = ['temp', 'hum', 'windspeed', 'season']
+            feature_cols_pred = list(input_data.keys())
             target_col_pred = 'cnt'
             
-            # Check if features exist in dataset
             missing_features = [f for f in feature_cols_pred if f not in df.columns]
             if missing_features:
                 st.error(f"Fitur {missing_features} tidak ditemukan di dataset.")
@@ -264,20 +341,15 @@ with tab3:
             
             try:
                 if model_type == "Regresi (Jumlah Sepeda)":
-                    model = RandomForestRegressor(n_estimators=100, random_state=42)
+                    model = RandomForestRegressor(n_estimators=200, random_state=42)
                     model.fit(X_train_pred, y_train_pred)
                 else:
-                    model = RandomForestClassifier(n_estimators=100, random_state=42)
+                    model = RandomForestClassifier(n_estimators=200, random_state=42)
                     model.fit(X_train_pred, y_train_pred)
                 
-                input_data = pd.DataFrame({
-                    'temp': [temp],
-                    'hum': [hum],
-                    'windspeed': [windspeed],
-                    'season': [season]
-                })
+                input_df = pd.DataFrame([input_data])
                 
-                pred_result = model.predict(input_data)[0]
+                pred_result = model.predict(input_df)[0]
                 
                 col_a, col_b = st.columns(2)
                 with col_a:
